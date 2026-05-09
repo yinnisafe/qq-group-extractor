@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QQ群成员提取</title>
+  <link rel="stylesheet" href="./static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="logo">
+        <span class="logo-mark">Q</span>
+        <span class="logo-text">群成员提取</span>
+      </a>
+      <nav class="topbar-nav">
+        <a href="https://qun.qq.com/#/member-manage/base-manage" target="_blank" rel="noopener noreferrer">QQ 群官网</a>
+        <button type="button" id="open-guide-btn">使用说明</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- 导入 & 脚本 -->
+    <section class="card">
+      <div class="card-hd">
+        <h2>数据导入</h2>
+        <span class="tag">支持 JSON / CSV / TXT</span>
+      </div>
+
+      <label class="dropzone" for="member_file">
+        <span class="dropzone-icon">+</span>
+        <div>
+          <strong>点击上传成员文件</strong>
+          <p>上传后在下方预览结果，推荐使用 JSON 格式</p>
+        </div>
+      </label>
+      <input id="member_file" type="file" accept=".csv,.txt,.json" aria-describedby="file-status" hidden />
+      <p class="hint" id="file-status">尚未载入文件</p>
+
+      <div class="script-block">
+        <div class="script-block-hd">
+          <span>控制台导出脚本</span>
+          <span class="tag">F12 → Console → 粘贴运行</span>
+        </div>
+        <div class="script-actions">
+          <button type="button" id="copy-script-btn" class="btn-primary">复制脚本</button>
+          <a href="https://qun.qq.com/#/member-manage/base-manage" target="_blank" rel="noopener noreferrer" class="btn-ghost">打开 QQ 群官网</a>
+        </div>
+        <span class="hint" id="copy-status" aria-live="polite"></span>
+        <details class="script-details">
+          <summary>展开查看完整脚本</summary>
+          <pre id="browser-script"></pre>
+        </details>
+      </div>
+    </section>
+
+    <!-- 筛选条件 -->
+    <section class="card">
+      <div class="card-hd">
+        <h2>筛选条件</h2>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-col">
+          <label for="keyword">关键词</label>
+          <input id="keyword" type="text" placeholder="昵称 / QQ号 / 备注…" />
+        </div>
+        <div class="filter-col">
+          <label for="deduplicate_by">去重字段</label>
+          <select id="deduplicate_by">
+            <option value="">不去重</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-block-hd">
+          <label>输出字段</label>
+          <span class="selected-fields-ribbon" id="selected-field-ribbon">未选择</span>
+        </div>
+        <div class="checkbox-grid fields-grid" id="fields-grid">
+          <p class="hint">上传文件后自动列出可选字段</p>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-block-hd">
+          <label>角色筛选</label>
+        </div>
+        <div class="checkbox-grid compact" id="roles-grid">
+          <p class="hint">上传文件后自动列出角色选项</p>
+        </div>
+      </div>
+
+      <div class="export-row">
+        <div class="export-col">
+          <label for="output_format">导出格式</label>
+          <select id="output_format">
+            <option value="csv">CSV</option>
+            <option value="txt">TXT</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div class="export-col">
+          <label for="delimiter">分隔符</label>
+          <input id="delimiter" type="text" value="," />
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="include_header" checked />
+          <span class="toggle-slider"></span>
+          <span>包含表头</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="preview-btn" class="btn-primary">预览结果</button>
+        <button type="button" id="download-btn" class="btn-ghost">下载导出</button>
+      </div>
+    </section>
+
+    <!-- 结果 -->
+    <section class="card" id="result-panel">
+      <div class="card-hd">
+        <h2>结果预览</h2>
+        <div class="stats-inline">
+          <div class="stat-item">
+            <span class="stat-num" id="total-rows">0</span>
+            <span class="stat-label">原始</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="filtered-count">0</span>
+            <span class="stat-label">筛选后</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" id="page-indicator">1/1</span>
+            <span class="stat-label">页码</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint" id="preview-summary">上传文件后点击预览按钮查看结果</p>
+
+      <div class="table-wrap" id="preview-wrap">
+        <div class="empty-state" id="empty-state">
+          <p>暂无数据，请先上传文件并点击预览</p>
+        </div>
+        <table id="preview-table" hidden>
+          <thead><tr id="preview-head"></tr></thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="pagination-bar" hidden>
+        <button type="button" id="prev-page-btn" class="btn-ghost" disabled>上一页</button>
+        <div class="page-numbers" id="page-numbers"></div>
+        <button type="button" id="next-page-btn" class="btn-ghost" disabled>下一页</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>数据仅在浏览器本地处理，不会上传到任何服务器</p>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="guide-modal" hidden aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+      <div class="modal-hd">
+        <h2 id="guide-title">使用说明</h2>
+        <button type="button" class="modal-close" id="close-guide-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-bd">
+        <h3>开始前</h3>
+        <ul>
+          <li>确保在 QQ 群官网的成员管理页面（而非聊天页）</li>
+          <li>你的账号需要对该群成员数据有查看权限</li>
+        </ul>
+        <h3>执行脚本</h3>
+        <ul>
+          <li>按 F12 → Console，粘贴脚本后回车</li>
+          <li>等待自动翻页完成，浏览器会自动下载文件</li>
+          <li>成员较多时请耐心等待，不要切走页面</li>
+        </ul>
+        <h3>导入 & 导出</h3>
+        <ul>
+          <li>推荐上传 <code>qq_members.json</code>，字段更完整</li>
+          <li>先预览确认结果，再下载导出</li>
+        </ul>
+      </div>
+      <div class="modal-ft">
+        <button type="button" class="btn-primary" id="close-guide-btn-bottom">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./static/app.js"></script>
+</body>
+</html>
